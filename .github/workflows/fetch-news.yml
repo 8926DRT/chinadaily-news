@@ -1,0 +1,31 @@
+name: 定时抓取 China Daily 新闻
+
+on:
+  schedule:
+    - cron: '0 */2 * * *'   # 每2小时一次（UTC时间）
+  workflow_dispatch:         # 允许手动触发
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 设置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 运行抓取脚本
+        run: python fetch_news.py
+
+      - name: 提交更新到仓库
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/news.json data/vocab_news.json
+          git diff --staged --quiet || (git commit -m "自动更新新闻和词汇分析 [skip ci]" && git push)
