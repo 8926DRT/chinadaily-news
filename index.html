@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>China Daily 新闻聚合 · 英语学习版</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; color: #333; }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        h1 { text-align: center; color: #c00; margin-bottom: 20px; }
+        .tabs { display: flex; justify-content: center; margin-bottom: 20px; }
+        .tab { background: white; border: 1px solid #ccc; padding: 10px 25px; cursor: pointer; margin: 0 5px; border-radius: 5px 5px 0 0; font-weight: bold; }
+        .tab.active { background: #c00; color: white; border-color: #c00; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .date-group { margin-bottom: 30px; }
+        .date-title { font-size: 20px; border-bottom: 2px solid #c00; padding-bottom: 5px; margin-bottom: 15px; color: #c00; }
+        .news-card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .news-header { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+        .category-tag { display: inline-block; background: #c00; color: white; padding: 2px 8px; border-radius: 3px; font-size: 12px; }
+        .news-time { color: #888; font-size: 13px; }
+        .news-title a { text-decoration: none; font-weight: bold; color: #1a0dab; }
+        .news-title a:hover { text-decoration: underline; }
+        .news-summary { color: #555; margin: 8px 0; font-size: 14px; }
+        .vocab-badges { margin-top: 8px; }
+        .vocab-badge { display: inline-block; background: #fff3cd; color: #856404; padding: 2px 8px; border-radius: 10px; font-size: 12px; margin-right: 5px; cursor: help; }
+        .vocab-badge:hover { background: #ffeeba; }
+
+        .vocab-list { display: flex; flex-wrap: wrap; gap: 10px; }
+        .vocab-card { background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); padding: 15px; width: calc(33.33% - 10px); min-width: 200px; }
+        .vocab-word { font-size: 20px; font-weight: bold; color: #c00; }
+        .vocab-meaning { color: #333; margin: 5px 0; }
+        .vocab-extension { font-size: 13px; color: #555; margin-bottom: 10px; }
+        .related-news-list { list-style: none; font-size: 13px; }
+        .related-news-list li { margin: 3px 0; }
+        .related-news-list a { color: #1a0dab; text-decoration: none; }
+        .related-news-list a:hover { text-decoration: underline; }
+
+        footer { text-align: center; margin-top: 30px; color: #999; font-size: 13px; }
+        footer a { color: #999; }
+
+        @media (max-width: 600px) {
+            .vocab-card { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📰 China Daily 新闻 + 考试词汇学习</h1>
+
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('news')">📅 新闻浏览</div>
+        <div class="tab" onclick="switchTab('vocab')">🎓 考试重点词汇</div>
+    </div>
+
+    <div id="news-tab" class="tab-content active">
+        <div id="news-container">正在加载新闻...</div>
+    </div>
+
+    <div id="vocab-tab" class="tab-content">
+        <div id="vocab-container">正在加载词汇分析...</div>
+    </div>
+
+    <footer>
+        新闻内容来源于 <a href="https://www.chinadaily.com.cn/" target="_blank">China Daily</a> 官方 RSS，
+        词汇分析基于四六级/雅思/托福高频词库，仅供学习使用。
+    </footer>
+</div>
+
+<script>
+function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    if (tab === 'news') {
+        document.querySelector('.tab:nth-child(1)').classList.add('active');
+        document.getElementById('news-tab').classList.add('active');
+    } else {
+        document.querySelector('.tab:nth-child(2)').classList.add('active');
+        document.getElementById('vocab-tab').classList.add('active');
+    }
+}
+
+fetch('data/news.json')
+    .then(res => res.json())
+    .then(newsGrouped => {
+        const container = document.getElementById('news-container');
+        if (Object.keys(newsGrouped).length === 0) {
+            container.innerHTML = '<p>暂时没有新闻数据。</p>';
+            return;
+        }
+        let html = '';
+        for (const [date, newsList] of Object.entries(newsGrouped)) {
+            html += `<div class="date-group"><h2 class="date-title">${date}</h2>`;
+            newsList.forEach(item => {
+                html += `<div class="news-card">
+                    <div class="news-header">
+                        <span class="category-tag">${item.category}</span>
+                        <span class="news-time">${item.published}</span>
+                    </div>
+                    <div class="news-title"><a href="${item.link}" target="_blank">${item.title}</a></div>
+                    <div class="news-summary">${item.summary}</div>`;
+                if (item.vocab && Object.keys(item.vocab).length > 0) {
+                    html += '<div class="vocab-badges">';
+                    for (const [word, info] of Object.entries(item.vocab)) {
+                        html += `<span class="vocab-badge" title="${info.meaning}：${info.extension}">📘 ${word}</span>`;
+                    }
+                    html += '</div>';
+                }
+                html += '</div>';
+            });
+            html += '</div>';
+        }
+        container.innerHTML = html;
+    })
+    .catch(err => {
+        document.getElementById('news-container').innerHTML = '加载新闻失败，请稍后再试。';
+        console.error(err);
+    });
+
+fetch('data/vocab_news.json')
+    .then(res => res.json())
+    .then(vocabList => {
+        const container = document.getElementById('vocab-container');
+        if (vocabList.length === 0) {
+            container.innerHTML = '<p>当前新闻中没有出现考试重点词汇。</p>';
+            return;
+        }
+        let html = '<div class="vocab-list">';
+        vocabList.forEach(item => {
+            html += `<div class="vocab-card">
+                <div class="vocab-word">${item.word}</div>
+                <div class="vocab-meaning">📖 ${item.meaning}</div>
+                <div class="vocab-extension">💡 ${item.extension}</div>
+                <div><strong>出现在以下新闻：</strong></div>
+                <ul class="related-news-list">`;
+            item.related_news.forEach(n => {
+                html += `<li><a href="${n.link}" target="_blank">${n.title}</a> <small>(${n.category})</small></li>`;
+            });
+            html += `</ul></div>`;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+    })
+    .catch(err => {
+        document.getElementById('vocab-container').innerHTML = '加载词汇数据失败。';
+        console.error(err);
+    });
+</script>
+</body>
+</html>
